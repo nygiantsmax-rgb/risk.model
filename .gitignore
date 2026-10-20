@@ -1,0 +1,18 @@
+# Allowlist: only the files named below are tracked. Everything else in this folder
+# (Schwab exports, generated reports, backups, personal documents) stays local.
+/*
+!/.gitignore
+!/README.md
+!/requirements.txt
+!/risk_model.py
+!/portfolio_import.py
+!/analysis.py
+!/dashboard.py
+!/export_widget.py
+!/widget_template.html
+!/test_risk_model.py
+!/test_portfolio_import.py
+!/test_analysis.py
+!/.streamlit/
+/.streamlit/*
+!/.streamlit/config.toml

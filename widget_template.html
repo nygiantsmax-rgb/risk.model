@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Risk Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  /* Template for export_widget.py. The build replaces the data placeholder in the script below. */
+  :root {
+    --ink: #0f172a; --ink2: #334155; --muted: #64748b; --faint: #94a3b8;
+    --line: #e2e8f0; --line2: #cbd5e1; --card: #ffffff; --subtle: #f8fafc;
+    --indigo: #4338ca; --indigo-soft: #eef2ff; --emerald: #047857; --rose: #be123c;
+    --heading: "Poppins", "Avenir Next", Avenir, system-ui, sans-serif;
+    --body: "Avenir Next", Avenir, "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+  body { font-family: var(--body); color: var(--ink); font-size: 13px; line-height: 1.35;
+         -webkit-font-smoothing: antialiased; }
+  .card { height: 100vh; min-height: 420px; display: flex; flex-direction: column; gap: 10px;
+          padding: 14px 16px 12px; background: var(--card); border: 1px solid var(--line);
+          border-radius: 12px; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* header */
+  .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .title { font-family: var(--heading); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; margin: 0; }
+  .sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .tabs { display: inline-flex; padding: 2px; background: var(--subtle); border: 1px solid var(--line);
+          border-radius: 8px; flex-shrink: 0; }
+  .tabs button { font: 500 11.5px var(--body); color: var(--ink2); background: none; border: 0;
+                 padding: 5px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .tabs button[aria-selected="true"] { background: var(--card); color: var(--indigo);
+                 box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); }
+  .tabs button:focus-visible, .btn:focus-visible { outline: 2px solid var(--indigo); outline-offset: 1px; }
+  .panel { display: flex; flex-direction: column; gap: 10px; min-height: 0; flex: 1; }
+  .panel[hidden] { display: none; }
+
+  /* metric tiles */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .tile { border: 1px solid var(--line); border-radius: 8px; padding: 7px 7px; background: var(--subtle); min-width: 0; }
+  .tile .lab { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em;
+               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile .val { font-family: var(--mono); font-size: 18px; font-weight: 600; margin-top: 2px; }
+  .tile .note { font-size: 10px; color: var(--muted); margin-top: 1px; white-space: nowrap;
+                overflow: hidden; text-overflow: ellipsis; }
+  .better { color: var(--emerald); }
+  .worse { color: var(--rose); }
+  .facts { font-size: 11px; color: var(--ink2); display: flex; flex-direction: column; gap: 2px; }
+  .facts b { font-weight: 600; color: var(--ink); }
+  .facts .muted { color: var(--muted); }
+
+  /* holdings list */
+  .listhead, .row { display: grid; grid-template-columns: 46px 1fr 50px 52px; align-items: center; gap: 8px; }
+  .listhead { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
+              padding: 0 4px 3px 0; border-bottom: 1px solid var(--line); }
+  .listhead span:nth-child(n+3) { text-align: right; }
+  .list { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+  .grp { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint);
+         padding: 6px 0 1px; }
+  .row { height: 22px; }
+  .tk { font-weight: 600; font-size: 12px; }
+  .row .wt, .row .rs { text-align: right; font-size: 12px; }
+  .rs.hot { color: var(--rose); font-weight: 600; }
+  .rs.cool { color: var(--emerald); }
+  input[type="range"] { width: 100%; margin: 0; accent-color: var(--indigo); height: 16px; cursor: pointer; }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 10.5px;
+          color: var(--muted); }
+  .btn { font: 600 11.5px var(--body); color: var(--indigo); background: var(--indigo-soft);
+         border: 1px solid #c7d2fe; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  .btn:disabled { color: var(--faint); background: var(--subtle); border-color: var(--line); cursor: default; }
+
+  /* heatmap */
+  .seg { display: inline-flex; gap: 2px; font-size: 11px; }
+  .seg button { font: 500 11px var(--body); color: var(--muted); background: none; border: 1px solid var(--line);
+                padding: 3px 8px; border-radius: 6px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { color: var(--ink); border-color: var(--line2); background: var(--subtle); }
+  .heatwrap { flex: 1; min-height: 0; display: flex; justify-content: center; }
+  .heatwrap svg { height: 100%; max-width: 100%; }
+  .legend { display: flex; align-items: center; gap: 8px; font-size: 10.5px; color: var(--muted); }
+  .legend .bar { flex: 1; height: 8px; border-radius: 4px; border: 1px solid var(--line); }
+  .err { color: var(--rose); font-size: 12px; }
+
+  @media (max-width: 430px) {
+    .tiles { grid-template-columns: repeat(2, 1fr); }
+    .head { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="card" id="rw">
+  <div class="head">
+    <div>
+      <h2 class="title">Portfolio Risk Lab</h2>
+      <div class="sub" id="asof"></div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Views">
+      <button role="tab" id="tab-w" aria-selected="true" aria-controls="panel-w">Weights &amp; VaR</button>
+      <button role="tab" id="tab-c" aria-selected="false" aria-controls="panel-c" tabindex="-1">Correlation matrix</button>
+    </div>
+  </div>
+
+  <section class="panel" id="panel-w" role="tabpanel" aria-labelledby="tab-w">
+    <div class="tiles">
+      <div class="tile"><div class="lab">Volatility</div><div class="val" id="m-vol"></div><div class="note" id="n-vol"></div></div>
+      <div class="tile"><div class="lab">VaR 95% &middot; 1D</div><div class="val" id="m-v1"></div><div class="note" id="n-v1"></div></div>
+      <div class="tile"><div class="lab">VaR 95% &middot; 1M</div><div class="val" id="m-vm"></div><div class="note" id="n-vm"></div></div>
+      <div class="tile"><div class="lab">Sharpe</div><div class="val" id="m-sh"></div><div class="note" id="n-sh"></div></div>
+    </div>
+    <div class="facts">
+      <div id="f-irr"></div>
+      <div id="f-bt"></div>
+    </div>
+    <div class="listhead"><span>Holding</span><span></span><span>Weight</span><span>Risk</span></div>
+    <div class="list" id="list"></div>
+    <div class="foot">
+      <button class="btn" id="reset" disabled>Reset weights</button>
+      <span id="modnote">Weights rebalance to 100%</span>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-c" role="tabpanel" aria-labelledby="tab-c" hidden>
+    <div class="foot">
+      <span id="heat-note"></span>
+      <div class="seg" role="group" aria-label="Matrix">
+        <button id="seg-corr" aria-pressed="true">Correlation</button>
+        <button id="seg-cov" aria-pressed="false">Covariance</button>
+      </div>
+    </div>
+    <div class="heatwrap" id="heat"></div>
+    <div class="legend"><span id="lg-lo"></span><div class="bar" id="lg-bar"></div><span id="lg-hi"></span></div>
+  </section>
+  <div class="foot"><span>Hypothetical. Not investment advice.</span><span id="win"></span></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var D = /*__WIDGET_DATA__*/null;
+  var card = document.getElementById("rw");
+  if (!D) { card.innerHTML = '<p class="err">No data. Build this file with export_widget.py.</p>'; return; }
+
+  var N = D.tickers.length, T = D.returns.length, ANN = 252, C = D.covDaily;
+  var MINUS = "−";
+
+  /* ---------- math: mirrors risk_model.py / analysis.py ---------- */
+  function seriesFor(w) {
+    var out = new Float64Array(T);
+    for (var t = 0; t < T; t++) { var r = D.returns[t], s = 0; for (var i = 0; i < N; i++) s += w[i] * r[i]; out[t] = s; }
+    return out;
+  }
+  function moments(p) {
+    var n = p.length, m = 0, i;
+    for (i = 0; i < n; i++) m += p[i];
+    m /= n;
+    var m2 = 0, m3 = 0, m4 = 0;
+    for (i = 0; i < n; i++) { var d = p[i] - m, d2 = d * d; m2 += d2; m3 += d2 * d; m4 += d2 * d2; }
+    var ss = m2; m2 /= n; m3 /= n; m4 /= n;
+    var g1 = m3 / Math.pow(m2, 1.5), g2 = m4 / (m2 * m2) - 3;
+    return {
+      mean: m,
+      sd: Math.sqrt(ss / (n - 1)),
+      skew: g1 * Math.sqrt(n * (n - 1)) / (n - 2),                       // scipy skew(bias=False)
+      exkurt: ((n + 1) * g2 + 6) * (n - 1) / ((n - 2) * (n - 3))           // scipy kurtosis(bias=False)
+    };
+  }
+  function cornishFisher(z, s, k) {
+    return z + (z * z - 1) * s / 6 + (z * z * z - 3 * z) * k / 24 - (2 * z * z * z - 5 * z) * s * s / 36;
+  }
+  function perf(p) {
+    var st = moments(p), W = 1, peak = 1, mdd = 0, worst = Infinity;
+    for (var t = 0; t < p.length; t++) {
+      W *= 1 + p[t]; if (W > peak) peak = W;
+      var dd = W / peak - 1; if (dd < mdd) mdd = dd; if (p[t] < worst) worst = p[t];
+    }
+    var sharpe = (st.mean - D.rf / ANN) * ANN / (st.sd * Math.sqrt(ANN));
+    return { st: st, total: W - 1, mdd: mdd, worst: worst, sharpe: sharpe };
+  }
+  function compute(w) {
+    var cw = new Array(N).fill(0), v = 0, i, j;
+    for (i = 0; i < N; i++) for (j = 0; j < N; j++) cw[i] += C[i][j] * w[j];
+    for (i = 0; i < N; i++) v += w[i] * cw[i];
+    var sig = Math.sqrt(v), p = seriesFor(w), pf = perf(p);
+    var q = cornishFisher(D.z95, pf.st.skew, pf.st.exkurt);
+    var var1d = -sig * q;                                                // zero mean, as in the model
+    var share = w.map(function (wi, k) { return wi * cw[k] / v; });   // Euler shares of VaR
+    return { vol: sig * Math.sqrt(ANN), var1d: var1d, var1m: var1d * Math.sqrt(21), sharpe: pf.sharpe,
+             total: pf.total, mdd: pf.mdd, worst: pf.worst, share: share };
+  }
+  var bench = perf(Float64Array.from(D.benchmark.returns));
+
+  /* ---------- self-check against the Python model's own numbers ---------- */
+  var base = compute(D.weights), B = D.baseline, tol = 1e-5;
+  var diffs = {
+    vol: Math.abs(base.vol - B.vol), var1d: Math.abs(base.var1d - B.var95_1d),
+    sharpe: Math.abs(base.sharpe - B.sharpe), benchSharpe: Math.abs(bench.sharpe - B.sharpe_bench),
+    total: Math.abs(base.total - B.total), mdd: Math.abs(base.mdd - B.mdd),
+    share: Math.max.apply(null, base.share.map(function (s, k) { return Math.abs(s - B.risk_share[k]); }))
+  };
+  var ok = Object.keys(diffs).every(function (k) { return diffs[k] < (k === "sharpe" || k === "benchSharpe" ? 1e-4 : tol); });
+  window.riskWidget = { compute: compute, data: D, selfCheck: { ok: ok, diffs: diffs } };
+  if (!ok) console.warn("Risk widget self-check failed", diffs);
+
+  /* ---------- formatting ---------- */
+  function pct(x, d) { var s = (Math.abs(x) * 100).toFixed(d == null ? 1 : d) + "%"; return x < -1e-12 ? MINUS + s : s; }
+  function spct(x, d) { return (x >= 0 ? "+" : "") + pct(x, d); }
+  function fmtDate(s) {
+    var m = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], p = s.split("-");
+    return m[+p[1] - 1] + " " + (+p[2]) + ", " + p[0];
+  }
+  function el(id) { return document.getElementById(id); }
+  function delta(now, ref, lowerIsBetter, unit) {
+    var d = now - ref;
+    if (Math.abs(d) < 5e-5) return null;
+    var good = lowerIsBetter ? d < 0 : d > 0;
+    var txt = (d > 0 ? "+" : MINUS) + (unit === "pts" ? (Math.abs(d) * 100).toFixed(1) + " pts" : Math.abs(d).toFixed(2));
+    return '<span class="' + (good ? "better" : "worse") + '">' + txt + "</span>";
+  }
+
+  /* ---------- static text ---------- */
+  el("asof").textContent = D.label || ("Holdings as of " + fmtDate(D.asOf) + " · " + N + " positions");
+  if (D.resetLabel) el("reset").textContent = D.resetLabel;
+  el("win").textContent = "Data " + fmtDate(D.window.start) + " – " + fmtDate(D.window.end);
+  el("f-irr").innerHTML = D.irr
+    ? "Actual return since " + fmtDate(D.irr.since) + ": <b class=\"mono\">" + spct(D.irr.value) + "/yr</b> <span class=\"muted\">(money-weighted IRR)</span>"
+    : "";
+
+  /* ---------- holdings list ---------- */
+  var w = D.weights.slice();
+  var list = el("list"), rows = [], lastGroup = null;
+  D.tickers.forEach(function (tk, i) {
+    if (D.groups[i] !== lastGroup) {
+      lastGroup = D.groups[i];
+      var g = document.createElement("div"); g.className = "grp"; g.textContent = lastGroup; list.appendChild(g);
+    }
+    var row = document.createElement("div"); row.className = "row";
+    row.innerHTML = '<span class="tk">' + tk + '</span>' +
+      '<input type="range" min="0" max="1000" step="1" aria-label="' + tk + ' weight">' +
+      '<span class="wt mono"></span><span class="rs mono" title="Share of portfolio VaR"></span>';
+    var slider = row.querySelector("input");
+    slider.addEventListener("input", function () { setWeight(i, +slider.value / 1000); });
+    list.appendChild(row);
+    rows.push({ slider: slider, wt: row.querySelector(".wt"), rs: row.querySelector(".rs") });
+  });
+
+  function setWeight(i, x) {
+    x = Math.min(Math.max(x, 0), 1);
+    var others = 0, j;
+    for (j = 0; j < N; j++) if (j !== i) others += w[j];
+    var rest = 1 - x;
+    for (j = 0; j < N; j++) if (j !== i) w[j] = others > 1e-12 ? w[j] * rest / others : rest / (N - 1);
+    w[i] = x;
+    update();
+  }
+
+  function update() {
+    var m = compute(w);
+    var modified = w.some(function (wi, k) { return Math.abs(wi - D.weights[k]) > 1e-9; });
+    el("m-vol").textContent = pct(m.vol);
+    el("m-v1").textContent = pct(m.var1d, 2);
+    el("m-vm").textContent = pct(m.var1m);
+    el("m-sh").textContent = m.sharpe.toFixed(2);
+    el("n-vol").innerHTML = (modified && delta(m.vol, base.vol, true, "pts")) || "annualized";
+    el("n-v1").innerHTML = (modified && delta(m.var1d, base.var1d, true, "pts")) || "Cornish-Fisher";
+    el("n-vm").innerHTML = (modified && delta(m.var1m, base.var1m, true, "pts")) || "21 trading days";
+    el("n-sh").innerHTML = '<span class="' + (m.sharpe >= bench.sharpe ? "better" : "worse") + '">vs SPY ' +
+      bench.sharpe.toFixed(2) + "</span>";
+    el("f-bt").innerHTML = "Trailing year if these weights were held: <b class=\"mono\">" + spct(m.total, 0) +
+      "</b> vs S&amp;P 500 <span class=\"mono\">" + spct(bench.total, 0) + "</span> · worst day <span class=\"mono\">" +
+      pct(m.worst) + "</span> · max drawdown <span class=\"mono\">" + pct(m.mdd) + "</span>";
+    rows.forEach(function (r, k) {
+      r.slider.value = Math.round(w[k] * 1000);
+      r.wt.textContent = pct(w[k]);
+      r.rs.textContent = pct(m.share[k], 0);
+      r.rs.className = "rs mono" + (m.share[k] > 1.25 * w[k] && m.share[k] > 0.05 ? " hot" : m.share[k] < 0 ? " cool" : "");
+    });
+    el("reset").disabled = !modified;
+    el("modnote").textContent = modified ? "Tile changes vs starting weights" : "Red risk = outsized vs weight";
+  }
+  el("reset").addEventListener("click", function () { w = D.weights.slice(); update(); });
+
+  /* ---------- tabs ---------- */
+  var tabs = [el("tab-w"), el("tab-c")], panels = [el("panel-w"), el("panel-c")];
+  function select(k) {
+    tabs.forEach(function (t, j) { t.setAttribute("aria-selected", j === k); t.tabIndex = j === k ? 0 : -1; panels[j].hidden = j !== k; });
+    if (k === 1) renderHeat();
+  }
+  tabs.forEach(function (t, k) {
+    t.addEventListener("click", function () { select(k); });
+    t.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") { var n = (k + 1) % 2; select(n); tabs[n].focus(); }
+    });
+  });
+
+  /* ---------- heatmap ---------- */
+  var mode = "corr";
+  var sd = C.map(function (row, i) { return Math.sqrt(row[i]); });
+  var corr = C.map(function (row, i) { return row.map(function (c, j) { return c / (sd[i] * sd[j]); }); });
+  var covAnn = C.map(function (row) { return row.map(function (c) { return c * ANN; }); });
+  var NEG = [42, 120, 214], MID = [241, 245, 249], POS = [227, 73, 72];
+  function mix(a, b, t) { return a.map(function (v, k) { return Math.round(v + (b[k] - v) * t); }); }
+  function colorFor(v, lim) {
+    var t = Math.max(-1, Math.min(1, v / lim));
+    return t >= 0 ? mix(MID, POS, t) : mix(MID, NEG, -t);
+  }
+  function lum(c) {
+    var s = c.map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * s[0] + 0.7152 * s[1] + 0.0722 * s[2];
+  }
+  function rgb(c) { return "rgb(" + c.join(",") + ")"; }
+  function renderHeat() {
+    var M = mode === "corr" ? corr : covAnn;
+    var lim = mode === "corr" ? 1 : Math.max.apply(null, M.map(function (r) { return Math.max.apply(null, r.map(Math.abs)); }));
+    var cell = 26, lab = 42, size = lab + N * cell + 2, parts = [];
+    parts.push('<svg viewBox="0 0 ' + size + " " + size + '" role="img" aria-label="' +
+               (mode === "corr" ? "Correlation" : "Annualized covariance") + ' matrix of holdings">');
+    for (var i = 0; i < N; i++) {
+      var y = lab + i * cell;
+      parts.push('<text x="' + (lab - 5) + '" y="' + (y + cell / 2 + 3.5) + '" text-anchor="end" font-size="10" font-weight="600" fill="#334155">' + D.tickers[i] + "</text>");
+      parts.push('<text transform="translate(' + (lab + i * cell + cell / 2 + 3.5) + "," + (lab - 5) + ') rotate(-90)" font-size="10" font-weight="600" fill="#334155">' + D.tickers[i] + "</text>");
+      for (var j = 0; j < N; j++) {
+        var v = M[i][j], c = colorFor(v, lim), x = lab + j * cell;
+        var txt = mode === "corr" ? v.toFixed(2) : v.toFixed(2);
+        parts.push('<rect x="' + (x + 0.5) + '" y="' + (y + 0.5) + '" width="' + (cell - 1) + '" height="' + (cell - 1) +
+                   '" rx="2" fill="' + rgb(c) + '"><title>' + D.tickers[i] + " / " + D.tickers[j] + ": " + v.toFixed(3) + "</title></rect>");
+        parts.push('<text x="' + (x + cell / 2) + '" y="' + (y + cell / 2 + 3) + '" text-anchor="middle" font-size="8.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="' +
+                   (lum(c) < 0.42 ? "#ffffff" : "#0f172a") + '" pointer-events="none">' + txt.replace("-", MINUS) + "</text>");
+      }
+    }
+    for (var k = 1; k < N; k++) {                      // group dividers
+      if (D.groups[k] !== D.groups[k - 1]) {
+        var g = lab + k * cell;
+        parts.push('<line x1="' + g + '" y1="' + lab + '" x2="' + g + '" y2="' + (lab + N * cell) + '" stroke="#0f172a" stroke-width="1.2"/>');
+        parts.push('<line x1="' + lab + '" y1="' + g + '" x2="' + (lab + N * cell) + '" y2="' + g + '" stroke="#0f172a" stroke-width="1.2"/>');
+      }
+    }
+    parts.push("</svg>");
+    el("heat").innerHTML = parts.join("");
+    el("lg-bar").style.background = "linear-gradient(90deg," + rgb(NEG) + "," + rgb(MID) + "," + rgb(POS) + ")";
+    el("lg-lo").textContent = mode === "corr" ? MINUS + "1" : MINUS + lim.toFixed(2);
+    el("lg-hi").textContent = mode === "corr" ? "+1" : "+" + lim.toFixed(2);
+    el("heat-note").textContent = mode === "corr"
+      ? "Ledoit-Wolf correlation, daily returns"
+      : "Ledoit-Wolf covariance, annualized";
+  }
+  [["seg-corr", "corr"], ["seg-cov", "cov"]].forEach(function (pair) {
+    el(pair[0]).addEventListener("click", function () {
+      mode = pair[1];
+      el("seg-corr").setAttribute("aria-pressed", mode === "corr");
+      el("seg-cov").setAttribute("aria-pressed", mode === "cov");
+      renderHeat();
+    });
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>

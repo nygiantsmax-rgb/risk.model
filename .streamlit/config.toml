@@ -1,0 +1,6 @@
+[browser]
+gatherUsageStats = false
+
+[server]
+# Schwab CSV exports are a few kilobytes; keep uploads small.
+maxUploadSize = 5
